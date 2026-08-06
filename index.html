@@ -57,7 +57,7 @@
     backdrop-filter:blur(10px);
     border-bottom:1px solid var(--border-soft);
   }
-  .brand{display:flex; align-items:center; justify-content:center; gap:12px;}
+  .brand{display:flex; align-items:center; justify-content:center; gap:12px; position:relative; width:100%;}
   .brand .lamp{
     width:11px; height:11px; border-radius:50%;
     background:var(--teal);
@@ -70,6 +70,15 @@
     font-weight:700; font-size:22px; letter-spacing:2px; margin:0;
     text-transform:uppercase; text-align:center;
   }
+  .install-btn-header{
+    position:absolute; right:0; top:50%; transform:translateY(-50%);
+    padding:8px 15px; font-size:12.5px; border-radius:20px;
+  }
+  .install-btn-header.installed{
+    background:var(--bg-panel); color:var(--text-muted); border:1px solid var(--border);
+    cursor:default;
+  }
+  .install-btn-header.installed:hover{transform:translateY(-50%); border-color:var(--border);}
 
   .controls-row{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;}
   .search-wrap{position:relative;}
@@ -344,25 +353,13 @@
   .detail-add-app .add-app-toggle{max-width:280px;}
   .detail-add-app .add-app-form{max-width:340px;}
 
-  /* ---------- Footer / Install ---------- */
-  .footer{
-    max-width:1240px; margin:10px auto 0; padding:24px 28px 46px;
-    display:flex; justify-content:center;
-  }
-  .install-btn{
-    padding:11px 22px; font-size:13.5px; border-radius:24px;
-  }
-  .install-btn.installed{
-    background:var(--bg-panel); color:var(--text-muted); border:1px solid var(--border);
-    cursor:default;
-  }
-  .install-btn.installed:hover{transform:none; border-color:var(--border);}
-
   @media (max-width:600px){
     .topbar{padding:16px 16px 12px;}
     .search-wrap input{width:150px;}
     .grid{padding:16px 16px 60px;}
     .fab-home{width:56px; height:56px; top:14px; right:14px; font-size:9.5px;}
+    .install-btn-header{position:static; transform:none; margin-top:4px;}
+    .brand{flex-direction:column; gap:8px;}
   }
 </style>
 </head>
@@ -372,6 +369,10 @@
     <div class="brand">
       <div class="lamp"></div>
       <h1 class="display">PAINEL DE APLICATIVOS</h1>
+      <button class="btn install-btn-header" id="installBtn" onclick="handleInstallClick()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 19h14"/></svg>
+        Instalar
+      </button>
     </div>
 
     <div class="controls-row" id="controlsBlocks">
@@ -433,13 +434,6 @@
         <button class="btn btn-ghost" onclick="toggleAddApp()">Cancelar</button>
       </div>
     </div>
-  </div>
-
-  <div class="footer">
-    <button class="btn install-btn" id="installBtn" onclick="handleInstallClick()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 19h14"/></svg>
-      Instalar
-    </button>
   </div>
 
   <!-- Overlay do app -->

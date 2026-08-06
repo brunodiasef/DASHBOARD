@@ -80,6 +80,19 @@
   }
   .install-btn-header.installed:hover{transform:translateY(-50%); border-color:var(--border);}
 
+  .backup-actions{
+    position:absolute; left:0; top:50%; transform:translateY(-50%);
+    display:flex; gap:8px;
+  }
+  .icon-only-btn{
+    width:34px; height:34px; border-radius:50%; flex:none;
+    background:var(--bg-panel); border:1px solid var(--border); color:var(--text-muted);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    transition:border-color .12s, color .12s;
+  }
+  .icon-only-btn:hover{border-color:var(--teal); color:var(--text);}
+  .icon-only-btn input[type=file]{display:none;}
+
   .controls-row{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;}
   .search-wrap{position:relative;}
   .search-wrap input{
@@ -394,6 +407,15 @@
 
   <div class="topbar">
     <div class="brand">
+      <div class="backup-actions">
+        <button class="icon-only-btn" onclick="exportBackup()" title="Exportar backup (.json)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <label class="icon-only-btn" title="Importar backup (.json)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <input type="file" id="importBackupInput" accept=".json,application/json" onchange="importBackup(event)">
+        </label>
+      </div>
       <div class="lamp"></div>
       <h1 class="display">PAINEL DE APLICATIVOS</h1>
       <button class="btn install-btn-header" id="installBtn" onclick="handleInstallClick()">
@@ -539,11 +561,42 @@ function clearbitOf(u){
   }catch(e){ return ''; }
 }
 
-/* ---------- Armazenamento ----------
+/* ---------- Sincronização com Firebase ----------
+   Quando as credenciais do Firebase estiverem configuradas (ver bloco
+   <script type="module"> no fim do arquivo), os dados ficam salvos na
+   nuvem (Firestore) e sincronizam automaticamente entre todos os
+   aparelhos. Sem Firebase configurado, o app funciona normalmente
+   salvando só neste navegador (localStorage). */
+let firebaseActive = false;
+
+let resolveSyncMode;
+const syncModePromise = new Promise((res) => { resolveSyncMode = res; });
+window.addEventListener('firebase-ready', () => resolveSyncMode('firebase'));
+window.addEventListener('firebase-unavailable', () => resolveSyncMode('local'));
+// segurança: se por algum motivo nenhum evento disparar, não trava o app
+setTimeout(() => resolveSyncMode('local'), 4000);
+
+function updateSyncStatus(isCloud, isError){
+  const lamp = document.querySelector('.brand .lamp');
+  if(!lamp) return;
+  if(isError){
+    lamp.style.background = 'var(--coral)';
+    lamp.style.boxShadow = '0 0 8px 2px rgba(255,122,122,0.55)';
+    lamp.title = 'Erro ao sincronizar com a nuvem — salvando só neste aparelho';
+  } else if(isCloud){
+    lamp.style.background = 'var(--teal)';
+    lamp.style.boxShadow = '0 0 8px 2px rgba(79,209,197,0.65)';
+    lamp.title = 'Sincronizado na nuvem (Firebase) — mesmos apps em todos os aparelhos';
+  } else {
+    lamp.style.background = 'var(--amber)';
+    lamp.style.boxShadow = '0 0 8px 2px rgba(242,166,90,0.55)';
+    lamp.title = 'Salvando apenas neste aparelho (sincronização não configurada)';
+  }
+}
+
+/* ---------- Armazenamento local (cache / fallback) ----------
    Usa window.storage quando disponível (preview dentro do Claude.ai),
-   e localStorage como mecanismo real quando o site está publicado
-   (GitHub Pages, ou qualquer navegador comum) — é isso que garante
-   que os blocos e apps cadastrados fiquem salvos de verdade. */
+   e localStorage como mecanismo real quando o site está publicado. */
 function hasClaudeStorage(){
   return typeof window.storage !== 'undefined' && window.storage && typeof window.storage.get === 'function';
 }
@@ -568,19 +621,45 @@ async function storageWriteRaw(value){
 }
 
 async function loadState(){
-  try{
-    const raw = await storageReadRaw();
-    if(raw){
-      state = JSON.parse(raw);
-    } else {
+  const mode = await syncModePromise;
+
+  if(mode === 'firebase' && window.firebaseBridge && window.firebaseBridge.enabled){
+    firebaseActive = true;
+    window.firebaseBridge.subscribe(async (remoteState) => {
+      if(remoteState && Array.isArray(remoteState.blocks)){
+        state = remoteState;
+      } else {
+        // Documento ainda não existe na nuvem: migra o que já tinha localmente (se houver)
+        try{
+          const raw = await storageReadRaw();
+          state = raw ? JSON.parse(raw) : seedDefault();
+        }catch(e){ state = seedDefault(); }
+        window.firebaseBridge.save(state).catch(()=>{});
+      }
+      await storageWriteRaw(JSON.stringify(state));
+      render();
+      updateSyncStatus(true);
+    }, (err) => {
+      console.error('Firestore erro:', err);
+      updateSyncStatus(false, true);
+    });
+  } else {
+    firebaseActive = false;
+    try{
+      const raw = await storageReadRaw();
+      if(raw){
+        state = JSON.parse(raw);
+      } else {
+        state = seedDefault();
+        await saveState();
+      }
+    }catch(e){
       state = seedDefault();
       await saveState();
     }
-  }catch(e){
-    state = seedDefault();
-    await saveState();
+    render();
+    updateSyncStatus(false);
   }
-  render();
 }
 
 function seedDefault(){
@@ -594,7 +673,17 @@ function seedDefault(){
 async function saveState(){
   const ok = await storageWriteRaw(JSON.stringify(state));
   if(!ok){
-    showToast('Não foi possível salvar. Verifique o espaço de armazenamento do navegador.');
+    showToast('Não foi possível salvar localmente. Verifique o espaço do navegador.');
+  }
+  if(firebaseActive && window.firebaseBridge){
+    try{
+      await window.firebaseBridge.save(state);
+      updateSyncStatus(true);
+    }catch(e){
+      console.error('Falha ao salvar no Firestore:', e);
+      updateSyncStatus(false, true);
+      showToast('Sem conexão com a nuvem — salvo só neste aparelho por enquanto.');
+    }
   }
 }
 
@@ -968,6 +1057,73 @@ async function handleInstallClick(){
 }
 
 setInstallButtonState(isStandalone());
+</script>
+
+<!--
+  ============================================================
+  SINCRONIZAÇÃO EM NUVEM (FIREBASE)
+  ============================================================
+  Cole aqui embaixo as credenciais do SEU projeto Firebase
+  (Project settings > Your apps > SDK setup and configuration).
+  Enquanto os campos abaixo estiverem como "COLE_AQUI", o painel
+  funciona normalmente salvando só neste navegador (localStorage).
+-->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+  import { getFirestore, doc, onSnapshot, setDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDIiQgOMjrsbGq8aiHgJv8dhxpCFnAeiRA",
+    authDomain: "dashboard-9760e.firebaseapp.com",
+    projectId: "dashboard-9760e",
+    storageBucket: "dashboard-9760e.firebasestorage.app",
+    messagingSenderId: "1051001446696",
+    appId: "1:1051001446696:web:97c8186b02f8e29739b01d"
+  };
+
+  const FIREBASE_ENABLED = !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== 'COLE_AQUI');
+
+  window.firebaseBridge = { enabled: FIREBASE_ENABLED, ready: false };
+
+  if(FIREBASE_ENABLED){
+    (async () => {
+      try{
+        const app = initializeApp(FIREBASE_CONFIG);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        try{ await enableIndexedDbPersistence(db); }
+        catch(e){ /* multiplas abas abertas, ou navegador sem suporte — segue sem persistencia offline */ }
+
+        // Documento único: este painel é de uso pessoal (não multiusuário),
+        // então todos os aparelhos do mesmo dono sincronizam neste mesmo documento.
+        const docRef = doc(db, 'painel-data', 'principal');
+
+        window.firebaseBridge.subscribe = function(onChange, onError){
+          onSnapshot(docRef, (snap) => {
+            onChange(snap.exists() ? snap.data().state : null);
+          }, (err) => {
+            if(onError) onError(err);
+          });
+        };
+
+        window.firebaseBridge.save = async function(stateObj){
+          await setDoc(docRef, { state: stateObj, updatedAt: Date.now() });
+        };
+
+        await signInAnonymously(auth);
+        window.firebaseBridge.ready = true;
+        window.dispatchEvent(new Event('firebase-ready'));
+      }catch(err){
+        console.error('Falha ao inicializar Firebase:', err);
+        window.firebaseBridge.enabled = false;
+        window.dispatchEvent(new Event('firebase-unavailable'));
+      }
+    })();
+  } else {
+    window.dispatchEvent(new Event('firebase-unavailable'));
+  }
 </script>
 </body>
 </html>

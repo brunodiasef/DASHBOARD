@@ -498,11 +498,39 @@ function clearbitOf(u){
   }catch(e){ return ''; }
 }
 
+/* ---------- Armazenamento ----------
+   Usa window.storage quando disponível (preview dentro do Claude.ai),
+   e localStorage como mecanismo real quando o site está publicado
+   (GitHub Pages, ou qualquer navegador comum) — é isso que garante
+   que os blocos e apps cadastrados fiquem salvos de verdade. */
+function hasClaudeStorage(){
+  return typeof window.storage !== 'undefined' && window.storage && typeof window.storage.get === 'function';
+}
+
+async function storageReadRaw(){
+  if(hasClaudeStorage()){
+    try{
+      const res = await window.storage.get(STORAGE_KEY, false);
+      if(res && res.value) return res.value;
+    }catch(e){ /* segue para localStorage */ }
+  }
+  try{ return localStorage.getItem(STORAGE_KEY); }catch(e){ return null; }
+}
+
+async function storageWriteRaw(value){
+  let ok = false;
+  if(hasClaudeStorage()){
+    try{ await window.storage.set(STORAGE_KEY, value, false); ok = true; }catch(e){ /* segue para localStorage */ }
+  }
+  try{ localStorage.setItem(STORAGE_KEY, value); ok = true; }catch(e){ /* localStorage indisponível */ }
+  return ok;
+}
+
 async function loadState(){
   try{
-    const res = await window.storage.get(STORAGE_KEY, false);
-    if(res && res.value){
-      state = JSON.parse(res.value);
+    const raw = await storageReadRaw();
+    if(raw){
+      state = JSON.parse(raw);
     } else {
       state = seedDefault();
       await saveState();
@@ -523,10 +551,9 @@ function seedDefault(){
 }
 
 async function saveState(){
-  try{
-    await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
-  }catch(e){
-    showToast('Não foi possível salvar. Tente novamente.');
+  const ok = await storageWriteRaw(JSON.stringify(state));
+  if(!ok){
+    showToast('Não foi possível salvar. Verifique o espaço de armazenamento do navegador.');
   }
 }
 

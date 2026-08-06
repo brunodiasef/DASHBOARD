@@ -60,10 +60,11 @@
   .brand{display:flex; align-items:center; justify-content:center; gap:12px; position:relative; width:100%;}
   .brand .lamp{
     width:11px; height:11px; border-radius:50%;
-    background:var(--teal);
-    box-shadow:0 0 8px 2px rgba(79,209,197,0.65);
-    animation:blink 3.2s ease-in-out infinite;
+    background:var(--text-faint);
+    box-shadow:none;
+    animation:none;
   }
+  .brand .lamp.pulse{ animation:blink 3.2s ease-in-out infinite; }
   @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
   .brand h1{
     font-family:'Space Grotesk',sans-serif;
@@ -579,6 +580,7 @@ setTimeout(() => resolveSyncMode('local'), 4000);
 function updateSyncStatus(isCloud, isError){
   const lamp = document.querySelector('.brand .lamp');
   if(!lamp) return;
+  lamp.classList.add('pulse');
   if(isError){
     lamp.style.background = 'var(--coral)';
     lamp.style.boxShadow = '0 0 8px 2px rgba(255,122,122,0.55)';

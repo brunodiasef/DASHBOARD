@@ -1,7 +1,5 @@
-const CACHE_NAME = 'meu-painel-v1';
+const CACHE_NAME = 'meu-painel-v2'; // versao nova: forca a limpeza do cache antigo
 const APP_SHELL = [
-  './',
-  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
@@ -24,22 +22,41 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Cache-first para o "shell" do app; nunca intercepta os apps externos
-// abertos no iframe, pois esses ficam fora do escopo/dominio deste service worker.
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
+  const isHTML = event.request.mode === 'navigate' ||
+                 event.request.destination === 'document' ||
+                 url.pathname.endsWith('.html') ||
+                 url.pathname.endsWith('/');
+
+  if (isHTML) {
+    // Network-first: sempre tenta buscar a versao mais nova primeiro.
+    // So usa o cache se estiver offline.
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Demais arquivos (icones, manifest): cache-first, com atualizacao em segundo plano.
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        if (response && response.status === 200 && event.request.method === 'GET') {
+      const fetchPromise = fetch(event.request).then((response) => {
+        if (response && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return response;
       }).catch(() => cached);
+      return cached || fetchPromise;
     })
   );
 });

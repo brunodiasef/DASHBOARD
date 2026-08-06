@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel — Meus Aplicativos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-base:#14161c;
+    --bg-panel:#1c2029;
+    --bg-panel-2:#20242e;
+    --border:#2a2f3a;
+    --border-soft:#252a34;
+    --text:#edeef2;
+    --text-muted:#8b93a7;
+    --text-faint:#565d6e;
+    --teal:#4fd1c5;
+    --amber:#f2a65a;
+    --violet:#9b8cff;
+    --coral:#ff7a7a;
+    --lime:#b8e986;
+    --blue:#6fa8ff;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.035) 1px, transparent 0) 0 0/22px 22px,
+      var(--bg-base);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+
+  /* ---------- Topbar ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:18px 28px;
+    background:rgba(20,22,28,0.88);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border-soft);
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .lamp{
+    width:11px; height:11px; border-radius:50%;
+    background:var(--teal);
+    box-shadow:0 0 8px 2px rgba(79,209,197,0.65);
+    animation:blink 3.2s ease-in-out infinite;
+  }
+  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+  .brand h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700; font-size:19px; letter-spacing:0.2px; margin:0;
+  }
+  .brand span{color:var(--text-faint); font-size:12px; font-family:'JetBrains Mono',monospace; display:block; margin-top:1px;}
+
+  .topbar-actions{display:flex; align-items:center; gap:10px;}
+  .search-wrap{position:relative;}
+  .search-wrap input{
+    background:var(--bg-panel); border:1px solid var(--border);
+    color:var(--text); border-radius:8px; padding:9px 12px 9px 32px;
+    font-size:13px; font-family:'Inter',sans-serif; width:190px;
+    outline:none; transition:border-color .15s;
+  }
+  .search-wrap input:focus{border-color:var(--teal);}
+  .search-wrap svg{position:absolute; left:10px; top:50%; transform:translateY(-50%); opacity:0.5;}
+
+  .btn{
+    display:inline-flex; align-items:center; gap:7px;
+    border:1px solid var(--border); background:var(--bg-panel);
+    color:var(--text); font-family:'Inter',sans-serif; font-weight:500;
+    font-size:13px; padding:9px 14px; border-radius:8px; cursor:pointer;
+    transition:transform .12s, border-color .12s, background .12s;
+  }
+  .btn:hover{border-color:var(--teal); transform:translateY(-1px);}
+  .btn-primary{
+    background:linear-gradient(135deg,var(--teal),#3bb8ac);
+    color:#0d1512; border:none; font-weight:600;
+  }
+  .btn-primary:hover{filter:brightness(1.08); transform:translateY(-1px);}
+  .btn-ghost{background:transparent;}
+  .btn-danger:hover{border-color:var(--coral);}
+
+  /* ---------- New block panel ---------- */
+  .new-block-panel{
+    max-width:1240px; margin:0 auto; padding:0 28px;
+  }
+  .new-block-form{
+    display:none; gap:10px; align-items:center; flex-wrap:wrap;
+    background:var(--bg-panel); border:1px solid var(--border);
+    border-radius:var(--radius); padding:14px 16px; margin:16px 0 4px;
+  }
+  .new-block-form.open{display:flex;}
+  .new-block-form input[type=text]{
+    flex:1; min-width:160px;
+    background:var(--bg-panel-2); border:1px solid var(--border);
+    color:var(--text); border-radius:7px; padding:9px 11px; font-size:13px;
+    outline:none;
+  }
+  .new-block-form input[type=text]:focus{border-color:var(--teal);}
+  .swatches{display:flex; gap:7px;}
+  .swatch{
+    width:22px; height:22px; border-radius:50%; cursor:pointer;
+    border:2px solid transparent; transition:transform .1s;
+  }
+  .swatch.active{border-color:#fff; transform:scale(1.12);}
+
+  /* ---------- Grid ---------- */
+  .grid{
+    max-width:1240px; margin:0 auto; padding:20px 28px 90px;
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+    gap:18px; align-items:start;
+  }
+  .empty-state{
+    max-width:1240px; margin:60px auto; text-align:center; padding:0 28px;
+  }
+  .empty-state .icon{font-size:34px; margin-bottom:10px;}
+  .empty-state h2{font-family:'Space Grotesk',sans-serif; font-size:18px; margin:0 0 6px;}
+  .empty-state p{color:var(--text-muted); font-size:14px; margin:0 0 18px;}
+
+  /* ---------- Block card ---------- */
+  .block-card{
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-left:4px solid var(--block-color, var(--teal));
+    border-radius:var(--radius);
+    overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .block-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 14px 12px 16px;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .block-head-left{display:flex; align-items:center; gap:9px; min-width:0;}
+  .block-led{
+    width:8px; height:8px; border-radius:50%; flex:none;
+    background:var(--block-color, var(--teal));
+    box-shadow:0 0 6px 1px var(--block-color, var(--teal));
+  }
+  .block-title{
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14.5px;
+    letter-spacing:0.3px; text-transform:uppercase;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .block-count{
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-faint);
+    flex:none;
+  }
+  .icon-btn{
+    background:none; border:none; color:var(--text-faint); cursor:pointer;
+    padding:4px; border-radius:6px; display:flex; align-items:center;
+    transition:color .12s, background .12s;
+  }
+  .icon-btn:hover{color:var(--coral); background:rgba(255,122,122,0.1);}
+
+  .app-list{padding:8px 10px; display:flex; flex-direction:column; gap:4px;}
+  .app-row{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 9px 9px 10px; border-radius:8px; cursor:pointer;
+    border:1px solid transparent; position:relative;
+    transition:background .12s, border-color .12s, transform .12s;
+  }
+  .app-row:hover{
+    background:var(--bg-panel-2); border-color:var(--border);
+    transform:translateX(2px);
+  }
+  .app-switch{
+    width:4px; height:26px; border-radius:3px; flex:none;
+    background:var(--block-color, var(--teal)); opacity:0.55;
+  }
+  .app-favicon{
+    width:22px; height:22px; border-radius:5px; flex:none;
+    background:var(--bg-panel-2); object-fit:cover;
+  }
+  .app-info{min-width:0; flex:1;}
+  .app-name{font-size:13.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .app-url{font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .app-row .icon-btn{opacity:0; flex:none;}
+  .app-row:hover .icon-btn{opacity:1;}
+  .app-empty{padding:14px 10px; color:var(--text-faint); font-size:12.5px; text-align:center;}
+
+  /* add app inline */
+  .add-app{padding:10px; border-top:1px solid var(--border-soft);}
+  .add-app-toggle{
+    width:100%; background:none; border:1px dashed var(--border);
+    color:var(--text-muted); border-radius:8px; padding:8px; font-size:12.5px;
+    cursor:pointer; font-family:'Inter',sans-serif; transition:border-color .12s, color .12s;
+  }
+  .add-app-toggle:hover{border-color:var(--block-color,var(--teal)); color:var(--text);}
+  .add-app-form{display:none; flex-direction:column; gap:7px; margin-top:8px;}
+  .add-app-form.open{display:flex;}
+  .add-app-form input{
+    background:var(--bg-panel-2); border:1px solid var(--border);
+    color:var(--text); border-radius:6px; padding:8px 10px; font-size:12.5px;
+    outline:none; font-family:'Inter',sans-serif;
+  }
+  .add-app-form input:focus{border-color:var(--block-color,var(--teal));}
+  .add-app-form-actions{display:flex; gap:6px;}
+  .add-app-form-actions .btn{flex:1; justify-content:center; padding:7px; font-size:12px;}
+
+  /* ---------- Overlay (app viewer) ---------- */
+  .overlay{
+    position:fixed; inset:0; background:#0b0c10; z-index:100;
+    display:none; flex-direction:column;
+  }
+  .overlay.open{display:flex;}
+  .overlay-bar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 18px; background:#101319; border-bottom:1px solid var(--border-soft);
+    flex:none;
+  }
+  .overlay-bar-left{display:flex; align-items:center; gap:10px; min-width:0;}
+  .overlay-bar-left img{width:18px; height:18px; border-radius:4px;}
+  .overlay-bar-left span{font-size:13px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .overlay iframe{flex:1; width:100%; border:none; background:#fff;}
+
+  .fab-home{
+    position:fixed; top:22px; right:22px; z-index:110;
+    width:66px; height:66px; border-radius:50%;
+    background:linear-gradient(150deg,var(--teal),#2f9c92);
+    color:#08130f; border:none; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:10.5px;
+    letter-spacing:0.5px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08);
+    transition:transform .15s, box-shadow .15s;
+  }
+  .fab-home:hover{transform:translateY(-2px) scale(1.04); box-shadow:0 10px 26px rgba(0,0,0,0.5);}
+  .fab-home:active{transform:scale(0.96);}
+
+  .fallback-hint{
+    padding:6px 18px; background:#191c22; color:var(--text-faint);
+    font-size:11.5px; font-family:'JetBrains Mono',monospace; flex:none;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .fallback-hint a{color:var(--teal); text-decoration:none;}
+
+  /* toast */
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--bg-panel-2); border:1px solid var(--border); color:var(--text);
+    padding:10px 16px; border-radius:8px; font-size:13px; z-index:200;
+    opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:600px){
+    .topbar{padding:14px 16px; flex-wrap:wrap;}
+    .search-wrap input{width:130px;}
+    .grid{padding:16px 16px 90px;}
+    .fab-home{width:56px; height:56px; top:14px; right:14px; font-size:9.5px;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="lamp"></div>
+      <div>
+        <h1 class="display">Meu Painel</h1>
+        <span>lançador pessoal de aplicativos</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" placeholder="Buscar aplicativo..." oninput="applyFilter()">
+      </div>
+      <button class="btn btn-primary" onclick="toggleNewBlockForm()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Novo bloco
+      </button>
+    </div>
+  </div>
+
+  <div class="new-block-panel">
+    <div class="new-block-form" id="newBlockForm">
+      <input type="text" id="newBlockName" placeholder="Nome do bloco (ex: Jogos, Escola...)" maxlength="30">
+      <div class="swatches" id="newBlockSwatches"></div>
+      <button class="btn btn-primary" onclick="createBlock()">Criar bloco</button>
+      <button class="btn btn-ghost" onclick="toggleNewBlockForm()">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="emptyState" class="empty-state" style="display:none;">
+    <div class="icon">🗂️</div>
+    <h2 class="display">Seu painel está vazio</h2>
+    <p>Crie um bloco (categoria) para começar a organizar seus aplicativos.</p>
+    <button class="btn btn-primary" onclick="toggleNewBlockForm()">+ Criar primeiro bloco</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <!-- Overlay do app -->
+  <div class="overlay" id="overlay">
+    <div class="overlay-bar">
+      <div class="overlay-bar-left">
+        <img id="overlayFavicon" src="" alt="">
+        <span id="overlayUrl" class="mono"></span>
+      </div>
+      <a class="btn btn-ghost" id="overlayNewTab" href="#" target="_blank" rel="noopener noreferrer" style="font-size:12px; padding:7px 11px;">
+        Abrir em nova aba ↗
+      </a>
+    </div>
+    <div class="fallback-hint">Se o app não aparecer, o site de destino pode bloquear exibição incorporada — use "Abrir em nova aba".</div>
+    <iframe id="overlayIframe" src="" title="app externo"></iframe>
+  </div>
+
+  <button class="fab-home" id="fabHome" style="display:none;" onclick="closeOverlay()" title="Voltar ao painel">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#08130f" stroke-width="2.4"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-9"/></svg>
+    HOME
+  </button>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'launcher-dashboard-v1';
+const COLORS = [
+  {name:'teal', hex:'#4fd1c5'},
+  {name:'amber', hex:'#f2a65a'},
+  {name:'violet', hex:'#9b8cff'},
+  {name:'coral', hex:'#ff7a7a'},
+  {name:'lime', hex:'#b8e986'},
+  {name:'blue', hex:'#6fa8ff'},
+];
+
+let state = { blocks: [] };
+let selectedNewBlockColor = COLORS[0].hex;
+let filterText = '';
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function normalizeUrl(u){
+  u = u.trim();
+  if(!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  return u;
+}
+function hostOf(u){
+  try{ return new URL(u).hostname.replace(/^www\./,''); }catch(e){ return u; }
+}
+function faviconOf(u){
+  try{
+    const h = new URL(u).hostname;
+    return `https://www.google.com/s2/favicons?sz=64&domain=${h}`;
+  }catch(e){ return ''; }
+}
+
+async function loadState(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value){
+      state = JSON.parse(res.value);
+    } else {
+      state = seedDefault();
+      await saveState();
+    }
+  }catch(e){
+    state = seedDefault();
+    await saveState();
+  }
+  render();
+}
+
+function seedDefault(){
+  return { blocks: [
+    { id: uid(), name:'Jogos', color: COLORS[3].hex, apps: [] },
+    { id: uid(), name:'Escola', color: COLORS[5].hex, apps: [] },
+    { id: uid(), name:'Profissional', color: COLORS[0].hex, apps: [] },
+  ]};
+}
+
+async function saveState(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+  }catch(e){
+    showToast('Não foi possível salvar. Tente novamente.');
+  }
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._tid);
+  showToast._tid = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------- render ---------- */
+function render(){
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('emptyState');
+  grid.innerHTML = '';
+
+  if(state.blocks.length === 0){
+    empty.style.display = 'block';
+    grid.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.style.display = 'grid';
+
+  const q = filterText.trim().toLowerCase();
+
+  state.blocks.forEach(block=>{
+    const visibleApps = q
+      ? block.apps.filter(a => a.name.toLowerCase().includes(q) || hostOf(a.url).toLowerCase().includes(q))
+      : block.apps;
+    if(q && visibleApps.length === 0 && !block.name.toLowerCase().includes(q)) return;
+
+    const card = document.createElement('div');
+    card.className = 'block-card';
+    card.style.setProperty('--block-color', block.color);
+
+    card.innerHTML = `
+      <div class="block-head">
+        <div class="block-head-left">
+          <div class="block-led"></div>
+          <div class="block-title" title="${escapeHtml(block.name)}">${escapeHtml(block.name)}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="block-count">${block.apps.length}</div>
+          <button class="icon-btn" title="Excluir bloco" onclick="deleteBlock('${block.id}')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="app-list">
+        ${ visibleApps.length === 0
+            ? `<div class="app-empty">Nenhum aplicativo ${q?'encontrado':'cadastrado'}</div>`
+            : visibleApps.map(app => appRowHtml(block, app)).join('')
+        }
+      </div>
+      <div class="add-app">
+        <button class="add-app-toggle" onclick="toggleAddApp('${block.id}')">+ Cadastrar aplicativo</button>
+        <div class="add-app-form" id="addAppForm-${block.id}">
+          <input type="text" id="appName-${block.id}" placeholder="Nome do aplicativo" maxlength="40">
+          <input type="text" id="appUrl-${block.id}" placeholder="URL (ex: meuapp.com)">
+          <div class="add-app-form-actions">
+            <button class="btn btn-primary" onclick="addApp('${block.id}')">Adicionar</button>
+            <button class="btn btn-ghost" onclick="toggleAddApp('${block.id}')">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function appRowHtml(block, app){
+  const fav = faviconOf(app.url);
+  return `
+    <div class="app-row" onclick="openApp('${app.id}','${block.id}')">
+      <div class="app-switch"></div>
+      <img class="app-favicon" src="${fav}" onerror="this.style.visibility='hidden'" alt="">
+      <div class="app-info">
+        <div class="app-name">${escapeHtml(app.name)}</div>
+        <div class="app-url">${escapeHtml(hostOf(app.url))}</div>
+      </div>
+      <button class="icon-btn" title="Excluir app" onclick="event.stopPropagation(); deleteApp('${block.id}','${app.id}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/></svg>
+      </button>
+    </div>
+  `;
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+/* ---------- block actions ---------- */
+function buildSwatches(){
+  const wrap = document.getElementById('newBlockSwatches');
+  wrap.innerHTML = COLORS.map((c,i)=>`<div class="swatch ${i===0?'active':''}" style="background:${c.hex}" data-hex="${c.hex}" onclick="selectSwatch(this)"></div>`).join('');
+}
+function selectSwatch(el){
+  document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  selectedNewBlockColor = el.dataset.hex;
+}
+function toggleNewBlockForm(){
+  const f = document.getElementById('newBlockForm');
+  f.classList.toggle('open');
+  if(f.classList.contains('open')){
+    document.getElementById('newBlockName').value='';
+    document.getElementById('newBlockName').focus();
+  }
+}
+async function createBlock(){
+  const nameInput = document.getElementById('newBlockName');
+  const name = nameInput.value.trim();
+  if(!name){ showToast('Dê um nome ao bloco.'); nameInput.focus(); return; }
+  state.blocks.push({ id: uid(), name, color: selectedNewBlockColor, apps: [] });
+  await saveState();
+  toggleNewBlockForm();
+  render();
+  showToast(`Bloco "${name}" criado.`);
+}
+async function deleteBlock(id){
+  const block = state.blocks.find(b=>b.id===id);
+  if(!block) return;
+  if(!confirm(`Excluir o bloco "${block.name}" e todos os seus ${block.apps.length} aplicativo(s)?`)) return;
+  state.blocks = state.blocks.filter(b=>b.id!==id);
+  await saveState();
+  render();
+}
+
+/* ---------- app actions ---------- */
+function toggleAddApp(blockId){
+  const f = document.getElementById(`addAppForm-${blockId}`);
+  f.classList.toggle('open');
+  if(f.classList.contains('open')) document.getElementById(`appName-${blockId}`).focus();
+}
+async function addApp(blockId){
+  const block = state.blocks.find(b=>b.id===blockId);
+  if(!block) return;
+  const nameEl = document.getElementById(`appName-${blockId}`);
+  const urlEl = document.getElementById(`appUrl-${blockId}`);
+  const name = nameEl.value.trim();
+  let url = urlEl.value.trim();
+  if(!name || !url){ showToast('Preencha nome e URL.'); return; }
+  url = normalizeUrl(url);
+  block.apps.push({ id: uid(), name, url });
+  await saveState();
+  render();
+  showToast(`"${name}" cadastrado em ${block.name}.`);
+}
+async function deleteApp(blockId, appId){
+  const block = state.blocks.find(b=>b.id===blockId);
+  if(!block) return;
+  block.apps = block.apps.filter(a=>a.id!==appId);
+  await saveState();
+  render();
+}
+
+/* ---------- overlay / open app ---------- */
+function openApp(appId, blockId){
+  const block = state.blocks.find(b=>b.id===blockId);
+  const app = block && block.apps.find(a=>a.id===appId);
+  if(!app) return;
+  document.getElementById('overlayIframe').src = app.url;
+  document.getElementById('overlayUrl').textContent = `${app.name} — ${hostOf(app.url)}`;
+  document.getElementById('overlayFavicon').src = faviconOf(app.url);
+  document.getElementById('overlayNewTab').href = app.url;
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('fabHome').style.display = 'flex';
+}
+function closeOverlay(){
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('fabHome').style.display = 'none';
+  document.getElementById('overlayIframe').src = 'about:blank';
+}
+
+/* ---------- filter ---------- */
+function applyFilter(){
+  filterText = document.getElementById('searchInput').value;
+  render();
+}
+
+/* ---------- init ---------- */
+buildSwatches();
+loadState();
+</script>
+</body>
+</html>

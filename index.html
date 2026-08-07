@@ -97,7 +97,16 @@
     font-size:12px;
     letter-spacing:0.3px;
     padding:8px 20px calc(var(--safe-bottom) + 28px);
+    display:flex; flex-direction:column; align-items:center; gap:12px;
   }
+  .app-qr-link{
+    display:inline-flex; padding:10px; border-radius:12px;
+    background:var(--content-panel); border:1px solid var(--content-border);
+    box-shadow:var(--shadow-sm);
+    transition:border-color .15s var(--ease), transform .15s var(--ease);
+  }
+  .app-qr-link:hover{border-color:var(--teal); transform:translateY(-2px);}
+  .app-qr{ width:104px; height:104px; display:block; border-radius:4px; }
 
   /* ---------- Topbar ---------- */
   .topbar{
@@ -361,6 +370,56 @@
   .fab-home:hover{transform:translateY(-2px) scale(1.04); box-shadow:0 10px 26px rgba(0,0,0,0.5);}
   .fab-home:active{transform:scale(0.96);}
 
+  /* ---------- Modal de senha ---------- */
+  .password-modal-overlay{
+    position:fixed; inset:0; z-index:150;
+    background:rgba(8,9,12,0.72); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .password-modal-overlay.open{display:flex;}
+  .password-modal{
+    background:linear-gradient(160deg, #1c2029, #20242e);
+    border:1px solid #2a2f3a;
+    border-radius:18px;
+    padding:28px 26px 24px;
+    width:100%; max-width:300px;
+    display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;
+    box-shadow:var(--shadow-lg);
+  }
+  .password-modal-icon{
+    width:52px; height:52px; border-radius:16px; flex:none;
+    background:linear-gradient(150deg, var(--teal), #2f9c92);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:8px;
+    box-shadow:0 4px 12px -2px rgba(0,0,0,0.35);
+  }
+  .password-modal h3{
+    font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700;
+    color:#edeef2; margin:0 0 2px; text-transform:uppercase; letter-spacing:0.4px;
+  }
+  .password-modal p{
+    font-size:13px; color:#8b93a7; margin:0 0 10px; line-height:1.4;
+  }
+  .password-modal p strong{color:#edeef2;}
+  .password-modal input{
+    width:100%; text-align:center; letter-spacing:2px;
+    background:#14161c; border:1px solid #2a2f3a;
+    color:#edeef2; border-radius:8px; padding:12px; font-size:15px;
+    min-height:44px; outline:none; transition:border-color .15s var(--ease);
+  }
+  .password-modal input:focus{border-color:var(--teal);}
+  .password-modal-error{
+    display:none; color:var(--coral); font-size:12px; margin-top:2px;
+  }
+  .password-modal-actions{
+    display:flex; gap:8px; width:100%; margin-top:14px;
+  }
+  .password-modal-actions .btn{flex:1; justify-content:center;}
+  .password-modal-actions .btn-ghost{
+    background:transparent; border:1px solid #2a2f3a; color:#8b93a7;
+  }
+
   /* toast */
   .toast{
     position:fixed; bottom:calc(var(--safe-bottom) + 22px); left:50%; transform:translateX(-50%) translateY(20px);
@@ -590,8 +649,30 @@
     </div>
   </div>
 
-  <div class="app-credit">Desenvolvido por Bruno Dias de Oliveira</div>
+  <div class="app-credit">
+    Desenvolvido por Bruno Dias de Oliveira
+    <a href="https://brunodiasef.github.io/DASHBOARD/" target="_blank" rel="noopener noreferrer" class="app-qr-link" title="Abrir o painel">
+      <img src="data:image/png;base64,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" alt="QR Code para abrir o painel" class="app-qr">
+    </a>
+  </div>
 
+  </div>
+
+  <!-- Modal de senha para blocos protegidos -->
+  <div class="password-modal-overlay" id="passwordModalOverlay">
+    <div class="password-modal">
+      <div class="password-modal-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0d1512" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      </div>
+      <h3>Bloco protegido</h3>
+      <p>Digite a senha para acessar <strong id="passwordModalBlockName"></strong></p>
+      <input type="password" id="passwordModalInput" placeholder="Senha" inputmode="text" onkeydown="handlePasswordModalKey(event)">
+      <div class="password-modal-error" id="passwordModalError">Senha incorreta.</div>
+      <div class="password-modal-actions">
+        <button class="btn btn-primary" onclick="submitBlockPassword()">Entrar</button>
+        <button class="btn btn-ghost" onclick="closePasswordModal()">Cancelar</button>
+      </div>
+    </div>
   </div>
 
   <!-- Overlay do app -->
@@ -715,6 +796,19 @@ async function storageWriteRaw(value){
   return ok;
 }
 
+function applyDefaultBlockPasswords(){
+  const map = { 'jogos':'jogos', 'escola':'escola', 'profissional':'798287' };
+  let changed = false;
+  state.blocks.forEach(block => {
+    const key = (block.name || '').trim().toLowerCase();
+    if(map[key] !== undefined && block.password === undefined){
+      block.password = map[key];
+      changed = true;
+    }
+  });
+  return changed;
+}
+
 async function loadState(){
   const mode = await syncModePromise;
 
@@ -731,6 +825,7 @@ async function loadState(){
         }catch(e){ state = seedDefault(); }
         window.firebaseBridge.save(state).catch(()=>{});
       }
+      if(applyDefaultBlockPasswords()){ window.firebaseBridge.save(state).catch(()=>{}); }
       await storageWriteRaw(JSON.stringify(state));
       render();
       updateSyncStatus(true);
@@ -752,6 +847,7 @@ async function loadState(){
       state = seedDefault();
       await saveState();
     }
+    if(applyDefaultBlockPasswords()){ await saveState(); }
     render();
     updateSyncStatus(false);
   }
@@ -846,7 +942,7 @@ function renderBlocksView(){
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/></svg>
       </button>
       <div class="block-tile-icon">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0d1512" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>
+        ${block.password ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0d1512" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>` : `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0d1512" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>`}
       </div>
       <div class="block-tile-name" title="${escapeHtml(block.name)}">${escapeHtml(block.name)}</div>
       <div class="block-tile-count">${block.apps.length} app${block.apps.length===1?'':'s'}</div>
@@ -885,7 +981,20 @@ function renderDetailView(){
     : `<div class="app-empty">Nenhum aplicativo encontrado</div>`;
 }
 
+let pendingPasswordBlockId = null;
+
 function openBlock(blockId){
+  const block = state.blocks.find(b=>b.id===blockId);
+  if(!block) return;
+  if(block.password){
+    pendingPasswordBlockId = blockId;
+    showPasswordModal(block.name);
+    return;
+  }
+  navigateToBlock(blockId);
+}
+
+function navigateToBlock(blockId){
   currentView = 'detail';
   currentBlockId = blockId;
   filterText = '';
@@ -896,6 +1005,41 @@ function openBlock(blockId){
   setAddAppFormMode(false);
   render();
 }
+
+function showPasswordModal(blockName){
+  document.getElementById('passwordModalBlockName').textContent = blockName;
+  const input = document.getElementById('passwordModalInput');
+  input.value = '';
+  document.getElementById('passwordModalError').style.display = 'none';
+  document.getElementById('passwordModalOverlay').classList.add('open');
+  setTimeout(() => input.focus(), 60);
+}
+
+function closePasswordModal(){
+  document.getElementById('passwordModalOverlay').classList.remove('open');
+  pendingPasswordBlockId = null;
+}
+
+function submitBlockPassword(){
+  const block = state.blocks.find(b=>b.id===pendingPasswordBlockId);
+  if(!block) { closePasswordModal(); return; }
+  const input = document.getElementById('passwordModalInput');
+  if(input.value === block.password){
+    const id = pendingPasswordBlockId;
+    closePasswordModal();
+    navigateToBlock(id);
+  } else {
+    document.getElementById('passwordModalError').style.display = 'block';
+    input.value = '';
+    input.focus();
+  }
+}
+
+function handlePasswordModalKey(event){
+  if(event.key === 'Enter') submitBlockPassword();
+  if(event.key === 'Escape') closePasswordModal();
+}
+
 function goToBlocks(){
   currentView = 'blocks';
   currentBlockId = null;

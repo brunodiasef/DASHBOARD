@@ -370,6 +370,39 @@
   .fab-home:hover{transform:translateY(-2px) scale(1.04); box-shadow:0 10px 26px rgba(0,0,0,0.5);}
   .fab-home:active{transform:scale(0.96);}
 
+  /* ---------- Modal de edição de bloco ---------- */
+  .edit-block-modal-overlay{
+    position:fixed; inset:0; z-index:150;
+    background:rgba(8,9,12,0.72); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .edit-block-modal-overlay.open{display:flex;}
+  .edit-block-modal{
+    background:linear-gradient(160deg, #1c2029, #20242e);
+    border:1px solid #2a2f3a;
+    border-radius:18px;
+    padding:26px 24px 22px;
+    width:100%; max-width:340px;
+    display:flex; flex-direction:column; gap:10px;
+    box-shadow:var(--shadow-lg);
+  }
+  .edit-block-modal h3{
+    font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700;
+    color:#edeef2; margin:0 0 4px; text-transform:uppercase; letter-spacing:0.4px; text-align:center;
+  }
+  .edit-block-modal input[type=text]{
+    background:#14161c; border:1px solid #2a2f3a;
+    color:#edeef2; border-radius:8px; padding:11px 12px; font-size:14px;
+    min-height:44px; outline:none; transition:border-color .15s var(--ease);
+  }
+  .edit-block-modal input[type=text]:focus{border-color:var(--teal);}
+  .edit-block-modal .swatches{justify-content:center; padding:2px 0;}
+  .edit-block-modal .icon-upload-row{margin-top:2px;}
+  .edit-block-hint{
+    font-size:11.5px; color:#8b93a7; text-align:center; margin:0;
+  }
+
   /* ---------- Modal de senha ---------- */
   .password-modal-overlay{
     position:fixed; inset:0; z-index:150;
@@ -454,6 +487,16 @@
     background:linear-gradient(150deg, var(--block-color, var(--teal)), rgba(0,0,0,0.15));
     display:flex; align-items:center; justify-content:center;
     box-shadow:0 4px 12px -2px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
+    position:relative; overflow:hidden;
+  }
+  .block-tile-icon-img{
+    width:100%; height:100%; object-fit:cover; display:block;
+  }
+  .block-tile-lock-badge{
+    position:absolute; bottom:-3px; right:-3px; width:20px; height:20px;
+    border-radius:50%; background:var(--teal);
+    border:2px solid #1c2029;
+    display:flex; align-items:center; justify-content:center;
   }
   .block-tile-name{
     font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15px;
@@ -478,6 +521,7 @@
     display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
   }
   .detail-header-left{display:flex; align-items:center; gap:12px; min-width:0;}
+  .detail-header-actions{display:flex; align-items:center; gap:6px; flex:none;}
   .back-btn{
     display:inline-flex; align-items:center; gap:6px;
     background:none; border:1px solid var(--border); color:var(--text-muted);
@@ -607,9 +651,14 @@
         <div class="detail-title" id="detailTitle"></div>
       </div>
     </div>
-    <button class="icon-btn" title="Excluir bloco" id="detailDeleteBtn" onclick="deleteCurrentBlock()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/></svg>
-    </button>
+    <div class="detail-header-actions">
+      <button class="icon-btn" title="Editar bloco" id="detailEditBtn" onclick="openEditBlockModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button>
+      <button class="icon-btn" title="Excluir bloco" id="detailDeleteBtn" onclick="deleteCurrentBlock()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/></svg>
+      </button>
+    </div>
   </div>
 
   <div id="emptyState" class="empty-state" style="display:none;">
@@ -656,6 +705,36 @@
     </a>
   </div>
 
+  </div>
+
+  <!-- Modal de edição de bloco -->
+  <div class="edit-block-modal-overlay" id="editBlockModalOverlay">
+    <div class="edit-block-modal">
+      <h3>Editar bloco</h3>
+
+      <input type="text" id="editBlockName" placeholder="Nome do bloco" maxlength="30">
+
+      <div class="swatches" id="editBlockSwatches"></div>
+
+      <div class="icon-upload-row">
+        <div class="icon-upload-preview" id="editBlockIconPreview">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        </div>
+        <label class="icon-upload-btn" for="editBlockIconFile">
+          Escolher imagem do dispositivo
+          <input type="file" id="editBlockIconFile" accept="image/*" onchange="handleEditBlockIconFile(event)">
+        </label>
+        <button type="button" class="icon-upload-clear" id="editBlockIconClear" onclick="clearEditBlockIcon()" style="display:none;" title="Remover imagem">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <p class="edit-block-hint">Sem imagem, o bloco usa o ícone de pasta na cor escolhida.</p>
+
+      <div class="password-modal-actions">
+        <button class="btn btn-primary" onclick="saveEditBlock()">Salvar alterações</button>
+        <button class="btn btn-ghost" onclick="closeEditBlockModal()">Cancelar</button>
+      </div>
+    </div>
   </div>
 
   <!-- Modal de senha para blocos protegidos -->
@@ -942,7 +1021,13 @@ function renderBlocksView(){
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/></svg>
       </button>
       <div class="block-tile-icon">
-        ${block.password ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0d1512" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>` : `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0d1512" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>`}
+        ${block.icon
+          ? `<img src="${block.icon}" alt="" class="block-tile-icon-img">`
+          : (block.password
+              ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0d1512" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>`
+              : `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0d1512" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>`)
+        }
+        ${block.icon && block.password ? `<div class="block-tile-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0d1512" stroke-width="3"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>` : ''}
       </div>
       <div class="block-tile-name" title="${escapeHtml(block.name)}">${escapeHtml(block.name)}</div>
       <div class="block-tile-count">${block.apps.length} app${block.apps.length===1?'':'s'}</div>
@@ -1096,7 +1181,7 @@ function buildSwatches(){
   wrap.innerHTML = COLORS.map((c,i)=>`<div class="swatch ${i===0?'active':''}" style="background:${c.hex}" data-hex="${c.hex}" onclick="selectSwatch(this)"></div>`).join('');
 }
 function selectSwatch(el){
-  document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('#newBlockSwatches .swatch').forEach(s=>s.classList.remove('active'));
   el.classList.add('active');
   selectedNewBlockColor = el.dataset.hex;
 }
@@ -1112,7 +1197,7 @@ async function createBlock(){
   const nameInput = document.getElementById('newBlockName');
   const name = nameInput.value.trim();
   if(!name){ showToast('Dê um nome ao bloco.'); nameInput.focus(); return; }
-  state.blocks.push({ id: uid(), name, color: selectedNewBlockColor, apps: [] });
+  state.blocks.push({ id: uid(), name, color: selectedNewBlockColor, icon: null, apps: [] });
   await saveState();
   toggleNewBlockForm();
   render();
@@ -1125,6 +1210,114 @@ async function deleteBlock(id, fromDetail){
   state.blocks = state.blocks.filter(b=>b.id!==id);
   await saveState();
   if(fromDetail){ goToBlocks(); } else { render(); }
+}
+
+/* ---------- edição de bloco (nome, cor, ícone) ---------- */
+let selectedEditBlockColor = COLORS[0].hex;
+let pendingEditBlockIcon; // undefined = sem alteração, null = remover, string = nova imagem
+const DEFAULT_ICON_PREVIEW_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>`;
+
+function buildEditSwatches(selectedHex){
+  const wrap = document.getElementById('editBlockSwatches');
+  wrap.innerHTML = COLORS.map(c=>`<div class="swatch ${c.hex===selectedHex?'active':''}" data-hex="${c.hex}" style="background:${c.hex}" onclick="selectEditSwatch(this)"></div>`).join('');
+}
+function selectEditSwatch(el){
+  document.querySelectorAll('#editBlockSwatches .swatch').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  selectedEditBlockColor = el.dataset.hex;
+}
+
+function openEditBlockModal(){
+  const block = state.blocks.find(b=>b.id===currentBlockId);
+  if(!block) return;
+
+  document.getElementById('editBlockName').value = block.name;
+  selectedEditBlockColor = block.color;
+  buildEditSwatches(block.color);
+  pendingEditBlockIcon = undefined;
+
+  const preview = document.getElementById('editBlockIconPreview');
+  const clearBtn = document.getElementById('editBlockIconClear');
+  if(block.icon){
+    preview.innerHTML = `<img src="${block.icon}" alt="">`;
+    clearBtn.style.display = 'flex';
+  } else {
+    preview.innerHTML = DEFAULT_ICON_PREVIEW_SVG;
+    clearBtn.style.display = 'none';
+  }
+  document.getElementById('editBlockIconFile').value = '';
+
+  document.getElementById('editBlockModalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('editBlockName').focus(), 60);
+}
+
+function closeEditBlockModal(){
+  document.getElementById('editBlockModalOverlay').classList.remove('open');
+}
+
+function handleEditBlockIconFile(event){
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){
+    showToast('Escolha um arquivo de imagem.');
+    event.target.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const size = 128;
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2;
+      const sy = (img.height - side) / 2;
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+      pendingEditBlockIcon = canvas.toDataURL('image/png');
+
+      document.getElementById('editBlockIconPreview').innerHTML = `<img src="${pendingEditBlockIcon}" alt="">`;
+      document.getElementById('editBlockIconClear').style.display = 'flex';
+    };
+    img.onerror = () => showToast('Não foi possível ler essa imagem.');
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearEditBlockIcon(){
+  pendingEditBlockIcon = null;
+  document.getElementById('editBlockIconFile').value = '';
+  document.getElementById('editBlockIconPreview').innerHTML = DEFAULT_ICON_PREVIEW_SVG;
+  document.getElementById('editBlockIconClear').style.display = 'none';
+}
+
+async function saveEditBlock(){
+  const block = state.blocks.find(b=>b.id===currentBlockId);
+  if(!block) return;
+  const nameInput = document.getElementById('editBlockName');
+  const name = nameInput.value.trim();
+  if(!name){ showToast('Dê um nome ao bloco.'); nameInput.focus(); return; }
+
+  block.name = name;
+  block.color = selectedEditBlockColor;
+  if(pendingEditBlockIcon === null) block.icon = null;
+  else if(typeof pendingEditBlockIcon === 'string') block.icon = pendingEditBlockIcon;
+
+  await saveState();
+  closeEditBlockModal();
+
+  const ledEl = document.getElementById('detailLed');
+  if(ledEl){
+    ledEl.style.background = block.color;
+    ledEl.style.boxShadow = `0 0 8px 1px ${block.color}`;
+  }
+  const titleEl = document.getElementById('detailTitle');
+  if(titleEl) titleEl.textContent = block.name;
+
+  render();
+  showToast('Bloco atualizado.');
 }
 
 /* ---------- app actions ---------- */

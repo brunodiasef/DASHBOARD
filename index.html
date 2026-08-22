@@ -143,7 +143,7 @@
     box-shadow:var(--shadow-sm);
   }
   #newBlockBtn{ grid-column:1; justify-self:start; }
-  #installBtn{ grid-column:3; justify-self:end; }
+  .header-right-actions{ grid-column:3; justify-self:end; display:flex; align-items:center; gap:8px; }
   .install-btn-header.installed{
     background:var(--bg-panel); color:var(--text-muted); border:1px solid var(--border);
     cursor:default; box-shadow:none;
@@ -317,6 +317,16 @@
     max-width:100%; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
     overflow:hidden; color:#edeef2;
   }
+  .app-visibility-toggle{
+    display:inline-flex; align-items:center; gap:4px;
+    background:none; border:1px solid #2a2f3a; border-radius:20px;
+    padding:4px 9px; font-size:10px; font-family:'Inter',sans-serif; font-weight:600;
+    cursor:pointer; transition:border-color .12s, color .12s, background .12s;
+    color:#8b93a7;
+  }
+  .app-visibility-toggle.on{ color:var(--teal); border-color:rgba(79,209,197,0.4); background:rgba(79,209,197,0.08); }
+  .app-visibility-toggle.off{ color:#8b93a7; }
+  .app-visibility-toggle:hover{ border-color:var(--teal); color:var(--teal); }
   .app-empty{width:100%; padding:12px 6px 16px; color:var(--text-faint); font-size:12.5px; text-align:center;}
 
   /* add app inline */
@@ -369,6 +379,32 @@
   }
   .fab-home:hover{transform:translateY(-2px) scale(1.04); box-shadow:0 10px 26px rgba(0,0,0,0.5);}
   .fab-home:active{transform:scale(0.96);}
+
+  /* ---------- Tela de login ---------- */
+  .login-screen{
+    position:fixed; inset:0; z-index:300;
+    background:
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.035) 1px, transparent 0) 0 0/22px 22px,
+      var(--bg-base);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .login-card{
+    width:100%; max-width:320px;
+    display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px;
+  }
+  .login-lamp{
+    width:12px; height:12px; border-radius:50%;
+    background:var(--teal); box-shadow:0 0 10px 3px rgba(79,209,197,0.65);
+    animation:blink 3.2s ease-in-out infinite; margin-bottom:14px;
+  }
+  .login-card h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:22px;
+    letter-spacing:2px; text-transform:uppercase; color:#edeef2; margin:0;
+  }
+  .login-card p{ color:#8b93a7; font-size:13.5px; margin:6px 0 20px; }
+  .login-actions{ display:flex; flex-direction:column; gap:10px; width:100%; max-width:220px; }
+  .login-btn{ justify-content:center; padding:13px; font-size:14px; min-height:48px; }
 
   /* ---------- Modal de edição de bloco ---------- */
   .edit-block-modal-overlay{
@@ -584,7 +620,7 @@
     }
     #newBlockBtn .install-label{display:none;}
     #newBlockBtn svg{width:16px; height:16px;}
-    #installBtn{
+    .header-right-actions{
       grid-column:1/-1; grid-row:2; justify-self:center;
     }
     .grid{padding:16px 14px 50px; gap:14px;}
@@ -611,6 +647,44 @@
 </head>
 <body>
 
+  <!-- Tela de login -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="login-lamp"></div>
+      <h1 class="display">PAINEL DE APLICATIVOS</h1>
+      <p>Escolha como deseja entrar</p>
+      <div class="login-actions">
+        <button class="btn btn-primary login-btn" onclick="chooseUserRole()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Entrar
+        </button>
+        <button class="btn login-btn" onclick="openAdminLogin()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+          Administrador
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de senha do administrador -->
+  <div class="password-modal-overlay" id="adminLoginModalOverlay">
+    <div class="password-modal">
+      <div class="password-modal-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0d1512" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      </div>
+      <h3>Área do administrador</h3>
+      <p>Digite a senha de administrador</p>
+      <input type="password" id="adminLoginInput" placeholder="Senha" onkeydown="handleAdminLoginKey(event)">
+      <div class="password-modal-error" id="adminLoginError">Senha incorreta.</div>
+      <div class="password-modal-actions">
+        <button class="btn btn-primary" onclick="submitAdminLogin()">Entrar</button>
+        <button class="btn btn-ghost" onclick="closeAdminLoginModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="appRoot" style="display:none;">
+
   <div class="topbar">
     <div class="brand">
       <button class="btn install-btn-header" id="newBlockBtn" onclick="toggleNewBlockForm()">
@@ -621,10 +695,15 @@
         <div class="lamp"></div>
         <h1 class="display">PAINEL DE APLICATIVOS</h1>
       </div>
-      <button class="btn install-btn-header" id="installBtn" onclick="handleInstallClick()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 19h14"/></svg>
-        <span class="install-label">Instalar</span>
-      </button>
+      <div class="header-right-actions">
+        <button class="icon-only-btn" id="logoutBtn" title="Sair / trocar de área" onclick="logoutRole()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+        <button class="btn install-btn-header" id="installBtn" onclick="handleInstallClick()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 19h14"/></svg>
+          <span class="install-label">Instalar</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -651,7 +730,7 @@
         <div class="detail-title" id="detailTitle"></div>
       </div>
     </div>
-    <div class="detail-header-actions">
+    <div class="detail-header-actions" id="detailHeaderActions">
       <button class="icon-btn" title="Editar bloco" id="detailEditBtn" onclick="openEditBlockModal()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
       </button>
@@ -775,6 +854,8 @@
 
   <div class="toast" id="toast"></div>
 
+  </div>
+
 <script>
 const STORAGE_KEY = 'launcher-dashboard-v1';
 const COLORS = [
@@ -791,6 +872,59 @@ let selectedNewBlockColor = COLORS[0].hex;
 let filterText = '';
 let currentView = 'blocks';   // 'blocks' | 'detail'
 let currentBlockId = null;
+let appRole = null; // 'admin' | 'user'
+const ADMIN_PASSWORD = '798287';
+
+/* ---------- Login / papel (admin x usuário comum) ---------- */
+function chooseUserRole(){
+  appRole = 'user';
+  enterApp();
+}
+
+function openAdminLogin(){
+  const input = document.getElementById('adminLoginInput');
+  input.value = '';
+  document.getElementById('adminLoginError').style.display = 'none';
+  document.getElementById('adminLoginModalOverlay').classList.add('open');
+  setTimeout(() => input.focus(), 60);
+}
+
+function closeAdminLoginModal(){
+  document.getElementById('adminLoginModalOverlay').classList.remove('open');
+}
+
+function submitAdminLogin(){
+  const input = document.getElementById('adminLoginInput');
+  if(input.value === ADMIN_PASSWORD){
+    appRole = 'admin';
+    closeAdminLoginModal();
+    enterApp();
+  } else {
+    document.getElementById('adminLoginError').style.display = 'block';
+    input.value = '';
+    input.focus();
+  }
+}
+
+function handleAdminLoginKey(event){
+  if(event.key === 'Enter') submitAdminLogin();
+  if(event.key === 'Escape') closeAdminLoginModal();
+}
+
+function enterApp(){
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appRoot').style.display = 'block';
+  document.body.classList.toggle('is-user-role', appRole === 'user');
+  render();
+}
+
+function logoutRole(){
+  appRole = null;
+  currentView = 'blocks';
+  currentBlockId = null;
+  document.getElementById('appRoot').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
@@ -970,15 +1104,16 @@ function render(){
   const detailHeader = document.getElementById('detailHeader');
   const newBlockBtn = document.getElementById('newBlockBtn');
   const detailAddApp = document.getElementById('detailAddApp');
+  const isUser = appRole === 'user';
 
   if(currentView === 'detail'){
     detailHeader.style.display = 'flex';
     newBlockBtn.style.visibility = 'hidden';
-    detailAddApp.style.display = 'block';
+    detailAddApp.style.display = isUser ? 'none' : 'block';
     renderDetailView();
   } else {
     detailHeader.style.display = 'none';
-    newBlockBtn.style.visibility = 'visible';
+    newBlockBtn.style.visibility = isUser ? 'hidden' : 'visible';
     detailAddApp.style.display = 'none';
     renderBlocksView();
   }
@@ -1017,9 +1152,9 @@ function renderBlocksView(){
 
   grid.innerHTML = visibleBlocks.map(block => `
     <div class="block-tile" style="--block-color:${block.color}" onclick="openBlock('${block.id}')">
-      <button class="icon-btn block-tile-remove" title="Excluir bloco" onclick="event.stopPropagation(); deleteBlock('${block.id}')">
+      ${appRole === 'admin' ? `<button class="icon-btn block-tile-remove" title="Excluir bloco" onclick="event.stopPropagation(); deleteBlock('${block.id}')">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/></svg>
-      </button>
+      </button>` : ''}
       <div class="block-tile-icon">
         ${block.icon
           ? `<img src="${block.icon}" alt="" class="block-tile-icon-img">`
@@ -1043,6 +1178,9 @@ function renderDetailView(){
   document.getElementById('detailLed').style.boxShadow = `0 0 8px 1px ${block.color}`;
   document.getElementById('detailTitle').textContent = block.name;
 
+  const actionsEl = document.getElementById('detailHeaderActions');
+  if(actionsEl) actionsEl.style.display = (appRole === 'admin') ? 'flex' : 'none';
+
   const grid = document.getElementById('grid');
   const empty = document.getElementById('emptyState');
   grid.style.gridTemplateColumns = '';
@@ -1053,11 +1191,13 @@ function renderDetailView(){
   grid.style.maxWidth = '1240px';
 
   const q = filterText.trim().toLowerCase();
-  const visibleApps = q ? block.apps.filter(a => a.name.toLowerCase().includes(q)) : block.apps;
+  const isUser = appRole === 'user';
+  let appsPool = isUser ? block.apps.filter(a => a.visibleToUsers !== false) : block.apps;
+  const visibleApps = q ? appsPool.filter(a => a.name.toLowerCase().includes(q)) : appsPool;
 
-  if(block.apps.length === 0){
+  if(appsPool.length === 0){
     empty.style.display = 'none';
-    grid.innerHTML = `<div class="app-empty">Nenhum aplicativo cadastrado neste bloco ainda.</div>`;
+    grid.innerHTML = `<div class="app-empty">Nenhum aplicativo ${isUser ? 'disponível' : 'cadastrado'} neste bloco ainda.</div>`;
     return;
   }
   empty.style.display = 'none';
@@ -1138,20 +1278,28 @@ function appRowHtml(block, app){
   const letter = (app.name.trim()[0] || '?').toUpperCase();
   const primarySrc = app.icon ? app.icon : clearbitOf(app.url);
   const fallbackSrc = faviconOf(app.url);
+  const isAdmin = appRole === 'admin';
+  const isVisibleToUsers = app.visibleToUsers !== false;
   return `
     <div class="app-tile" onclick="openApp('${app.id}','${block.id}')" title="${escapeHtml(app.name)}">
-      <div class="app-tile-edit" title="Editar app" onclick="event.stopPropagation(); openEditApp('${block.id}','${app.id}')">
+      ${isAdmin ? `<div class="app-tile-edit" title="Editar app" onclick="event.stopPropagation(); openEditApp('${block.id}','${app.id}')">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-      </div>
-      <div class="app-tile-remove" title="Excluir app" onclick="event.stopPropagation(); deleteApp('${block.id}','${app.id}')">
+      </div>` : ''}
+      ${isAdmin ? `<div class="app-tile-remove" title="Excluir app" onclick="event.stopPropagation(); deleteApp('${block.id}','${app.id}')">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </div>
+      </div>` : ''}
       <div class="app-icon-wrap">
         <img class="app-favicon" src="${primarySrc}" alt=""
           data-fallback="${fallbackSrc}" data-letter="${letter}"
           onerror="handleIconError(this)">
       </div>
       <div class="app-name">${escapeHtml(app.name)}</div>
+      ${isAdmin ? `<button type="button" class="app-visibility-toggle ${isVisibleToUsers ? 'on' : 'off'}" title="${isVisibleToUsers ? 'Visível para usuários comuns' : 'Oculto para usuários comuns'}" onclick="event.stopPropagation(); toggleAppVisibility('${block.id}','${app.id}')">
+        ${isVisibleToUsers
+          ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg> Visível`
+          : `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.6 21.6 0 0 1 5.06-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 7 11 7a21.6 21.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Oculto`
+        }
+      </button>` : ''}
     </div>
   `;
 }
@@ -1477,6 +1625,15 @@ async function deleteApp(blockId, appId){
     setAddAppFormMode(false);
     document.getElementById('addAppForm').classList.remove('open');
   }
+  await saveState();
+  render();
+}
+
+async function toggleAppVisibility(blockId, appId){
+  const block = state.blocks.find(b=>b.id===blockId);
+  const app = block && block.apps.find(a=>a.id===appId);
+  if(!app) return;
+  app.visibleToUsers = (app.visibleToUsers === false); // alterna: false->true, true/undefined->false
   await saveState();
   render();
 }

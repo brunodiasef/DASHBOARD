@@ -1011,12 +1011,17 @@ async function storageWriteRaw(value){
 }
 
 function applyDefaultBlockPasswords(){
-  const map = { 'jogos':'jogos', 'escola':'escola', 'profissional':'798287' };
+  const map = { 'escola':'escola', 'profissional':'798287' };
   let changed = false;
   state.blocks.forEach(block => {
     const key = (block.name || '').trim().toLowerCase();
     if(map[key] !== undefined && block.password === undefined){
       block.password = map[key];
+      changed = true;
+    }
+    // Jogos não deve mais ter senha (removida a pedido do usuário)
+    if(key === 'jogos' && block.password){
+      block.password = null;
       changed = true;
     }
   });
@@ -1134,8 +1139,17 @@ function renderBlocksView(){
   }
 
   const q = filterText.trim().toLowerCase();
-  const visibleBlocks = q ? state.blocks.filter(b => b.name.toLowerCase().includes(q)) : state.blocks;
+  const isUser = appRole === 'user';
+  let blocksPool = isUser ? state.blocks.filter(b => b.visibleToUsers !== false) : state.blocks;
+  const visibleBlocks = q ? blocksPool.filter(b => b.name.toLowerCase().includes(q)) : blocksPool;
 
+  if(blocksPool.length === 0){
+    empty.style.display = 'block';
+    grid.style.display = 'none';
+    document.querySelector('#emptyState h2').textContent = isUser ? 'Nenhum bloco disponível' : 'Seu painel está vazio';
+    document.querySelector('#emptyState p').textContent = isUser ? 'Peça ao administrador para liberar algum bloco.' : 'Crie um bloco (categoria) para começar a organizar seus aplicativos.';
+    return;
+  }
   if(visibleBlocks.length === 0){
     empty.style.display = 'block';
     grid.style.display = 'none';
@@ -1151,7 +1165,9 @@ function renderBlocksView(){
   grid.style.justifyContent = 'center';
   grid.style.gridTemplateColumns = '';
 
-  grid.innerHTML = visibleBlocks.map(block => `
+  grid.innerHTML = visibleBlocks.map(block => {
+    const isBlockVisible = block.visibleToUsers !== false;
+    return `
     <div class="block-tile" style="--block-color:${block.color}" onclick="openBlock('${block.id}')">
       ${appRole === 'admin' ? `<button class="icon-btn block-tile-remove" title="Excluir bloco" onclick="event.stopPropagation(); deleteBlock('${block.id}')">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/></svg>
@@ -1167,8 +1183,15 @@ function renderBlocksView(){
       </div>
       <div class="block-tile-name" title="${escapeHtml(block.name)}">${escapeHtml(block.name)}</div>
       <div class="block-tile-count">${block.apps.length} app${block.apps.length===1?'':'s'}</div>
+      ${appRole === 'admin' ? `<button type="button" class="app-visibility-toggle ${isBlockVisible ? 'on' : 'off'}" title="${isBlockVisible ? 'Visível para usuários comuns' : 'Oculto para usuários comuns'}" onclick="event.stopPropagation(); toggleBlockVisibility('${block.id}')">
+        ${isBlockVisible
+          ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg> Visível`
+          : `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.6 21.6 0 0 1 5.06-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 7 11 7a21.6 21.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Oculto`
+        }
+      </button>` : ''}
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function renderDetailView(){
@@ -1635,6 +1658,14 @@ async function toggleAppVisibility(blockId, appId){
   const app = block && block.apps.find(a=>a.id===appId);
   if(!app) return;
   app.visibleToUsers = (app.visibleToUsers === false); // alterna: false->true, true/undefined->false
+  await saveState();
+  render();
+}
+
+async function toggleBlockVisibility(blockId){
+  const block = state.blocks.find(b=>b.id===blockId);
+  if(!block) return;
+  block.visibleToUsers = (block.visibleToUsers === false); // alterna: false->true, true/undefined->false
   await saveState();
   render();
 }

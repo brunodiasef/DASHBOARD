@@ -380,6 +380,48 @@
   .fab-home:hover{transform:translateY(-2px) scale(1.04); box-shadow:0 10px 26px rgba(0,0,0,0.5);}
   .fab-home:active{transform:scale(0.96);}
 
+  /* ---------- Animação de entrada (splash) ---------- */
+  .splash{
+    position:fixed; inset:0; z-index:1000;
+    background:radial-gradient(circle at 50% 45%, #1a2133 0%, #0d1018 70%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px;
+    cursor:pointer;
+    transition:opacity .6s ease, visibility .6s ease;
+  }
+  .splash.hide{ opacity:0; visibility:hidden; pointer-events:none; }
+  .splash-logo{ width:min(42vw,170px); height:auto; overflow:visible;
+    animation:splashPop 2.6s cubic-bezier(.2,.8,.2,1) both; }
+  .splash-border{ fill:#111a2b; stroke:#f2c53d; stroke-width:22;
+    stroke-dasharray:1900; stroke-dashoffset:1900;
+    animation:splashDraw 1s .1s ease-out forwards; }
+  .splash-sq{ opacity:0; transform-box:fill-box; transform-origin:center; }
+  .splash-sq.s1{ animation:sqIn1 .55s .75s cubic-bezier(.3,1.5,.5,1) forwards; }
+  .splash-sq.s2{ animation:sqIn2 .55s .85s cubic-bezier(.3,1.5,.5,1) forwards; }
+  .splash-sq.s3{ animation:sqIn3 .55s .95s cubic-bezier(.3,1.5,.5,1) forwards; }
+  .splash-sq.s4{ animation:sqIn4 .55s 1.05s cubic-bezier(.3,1.5,.5,1) forwards; }
+  .splash-text{ font-family:'Space Grotesk','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:205px;
+    fill:#e8e8ee; letter-spacing:-6px; opacity:0;
+    transform-box:fill-box; transform-origin:center;
+    animation:textIn .6s 1.25s cubic-bezier(.2,.8,.2,1) forwards; }
+  .splash-title{ font-family:'Space Grotesk',sans-serif; font-weight:700; color:#edeef2;
+    font-size:clamp(14px,4vw,18px); letter-spacing:4px; text-transform:uppercase;
+    opacity:0; animation:titleIn .6s 1.7s ease-out forwards; }
+  .splash-glow{ position:absolute; width:260px; height:260px; border-radius:50%;
+    background:radial-gradient(circle, rgba(242,197,61,0.25), transparent 65%);
+    opacity:0; animation:glow 1.4s 1.2s ease-out forwards; pointer-events:none; }
+  @keyframes splashDraw{ to{ stroke-dashoffset:0; } }
+  @keyframes sqIn1{ from{opacity:0; transform:translate(-120px,-120px) scale(.3) rotate(-90deg);} to{opacity:1; transform:none;} }
+  @keyframes sqIn2{ from{opacity:0; transform:translate(120px,-120px) scale(.3) rotate(90deg);} to{opacity:1; transform:none;} }
+  @keyframes sqIn3{ from{opacity:0; transform:translate(-120px,120px) scale(.3) rotate(90deg);} to{opacity:1; transform:none;} }
+  @keyframes sqIn4{ from{opacity:0; transform:translate(120px,120px) scale(.3) rotate(-90deg);} to{opacity:1; transform:none;} }
+  @keyframes textIn{ from{opacity:0; transform:scale(.6); filter:blur(8px);} to{opacity:1; transform:scale(1); filter:blur(0);} }
+  @keyframes titleIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;} }
+  @keyframes glow{ 0%{opacity:0; transform:scale(.6);} 50%{opacity:1;} 100%{opacity:.6; transform:scale(1.2);} }
+  @keyframes splashPop{ 0%{transform:scale(.85);} 60%{transform:scale(1);} 80%{transform:scale(1.06);} 100%{transform:scale(1);} }
+  @media (prefers-reduced-motion: reduce){
+    .splash *, .splash{ animation-duration:.01s !important; animation-delay:0s !important; }
+  }
+
   /* ---------- Tela de login ---------- */
   .login-screen{
     position:fixed; inset:0; z-index:300;
@@ -647,6 +689,20 @@
 </style>
 </head>
 <body>
+
+  <!-- Animação de entrada -->
+  <div class="splash" id="splash" onclick="hideSplash()" aria-hidden="true">
+    <div class="splash-glow"></div>
+    <svg class="splash-logo" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <rect class="splash-border" x="11" y="11" width="490" height="490" rx="96"/>
+      <rect class="splash-sq s1" x="88"  y="48"  width="62" height="62" rx="10" fill="#4fd1c5"/>
+      <rect class="splash-sq s2" x="380" y="48"  width="62" height="62" rx="10" fill="#f2a65a"/>
+      <rect class="splash-sq s3" x="88"  y="364" width="62" height="62" rx="10" fill="#9b8cff"/>
+      <rect class="splash-sq s4" x="380" y="356" width="62" height="62" rx="10" fill="#ff7a7a"/>
+      <path class="splash-text" d="M250.5556640625 292.853515625Q250.5556640625 314.416015625 234.3837890625 326.2080078125Q218.2119140625 338.0 189.4619140625 338.0H110.287109375V179.7626953125H182.7236328125Q211.6982421875 179.7626953125 226.57861328125 189.81396484375Q241.458984375 199.865234375 241.458984375 219.5185546875Q241.458984375 232.9951171875 233.99072265625 242.26025390625Q226.5224609375 251.525390625 211.2490234375 254.7822265625Q230.453125 257.0283203125 240.50439453125 266.85498046875Q250.5556640625 276.681640625 250.5556640625 292.853515625ZM208.1044921875 224.0107421875Q208.1044921875 213.341796875 201.31005859375 208.849609375Q194.515625 204.357421875 181.1513671875 204.357421875H143.4169921875V243.5517578125H181.3759765625Q195.4140625 243.5517578125 201.75927734375 238.66650390625Q208.1044921875 233.78125 208.1044921875 224.0107421875ZM217.3134765625 290.2705078125Q217.3134765625 268.0341796875 185.4189453125 268.0341796875H143.4169921875V313.4052734375H186.654296875Q202.6015625 313.4052734375 209.95751953125 307.62158203125Q217.3134765625 301.837890625 217.3134765625 290.2705078125ZM407.4404296875 257.7021484375Q407.4404296875 282.1845703125 397.83837890625 300.43408203125Q388.236328125 318.68359375 370.66064453125 328.341796875Q353.0849609375 338.0 330.3994140625 338.0H266.3857421875V179.7626953125H323.6611328125Q363.6416015625 179.7626953125 385.541015625 199.92138671875Q407.4404296875 220.080078125 407.4404296875 257.7021484375ZM374.0859375 257.7021484375Q374.0859375 232.208984375 360.833984375 218.78857421875Q347.58203125 205.3681640625 322.9873046875 205.3681640625H299.515625V312.39453125H327.591796875Q348.9296875 312.39453125 361.5078125 297.6826171875Q374.0859375 282.970703125 374.0859375 257.7021484375Z"/>
+    </svg>
+    <div class="splash-title">Painel de Aplicativos</div>
+  </div>
 
   <!-- Tela de login -->
   <div class="login-screen" id="loginScreen">
@@ -1753,6 +1809,16 @@ async function handleInstallClick(){
 }
 
 setInstallButtonState(isStandalone());
+
+/* ---------- Animação de entrada ---------- */
+function hideSplash(){
+  const s = document.getElementById('splash');
+  if(!s || s.classList.contains('hide')) return;
+  s.classList.add('hide');
+  setTimeout(() => s.remove(), 700);
+}
+window.addEventListener('load', () => setTimeout(hideSplash, 2900));
+setTimeout(hideSplash, 4500); // garantia caso o "load" demore
 </script>
 
 <!--
